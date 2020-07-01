@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"strings"
@@ -149,8 +150,9 @@ func ValidateEnabledServices(ctx context.Context, client API, project string) er
 	projectServices, err := client.GetEnabledServices(ctx, project)
 
 	if err != nil {
-		if ae, ok := err.(*googleapi.Error); ok {
-			if ae.Code == http.StatusForbidden {
+		if apiError, ok := err.(*googleapi.Error); ok {
+			if apiError.Code == http.StatusForbidden {
+				logrus.Warn("Permission denied. Unable to fetch enabled services for project.")
 				return nil
 			}
 		}
@@ -158,7 +160,7 @@ func ValidateEnabledServices(ctx context.Context, client API, project string) er
 	}
 
 	if remaining := services.Difference(sets.NewString(projectServices...)); remaining.Len() > 0 {
-		return fmt.Errorf("following required services are not enabled in this project: %s",
+		return fmt.Errorf("the following required services are not enabled in this project: %s",
 			strings.Join(remaining.List(), ","))
 	}
 	return nil

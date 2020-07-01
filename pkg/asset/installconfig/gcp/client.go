@@ -222,12 +222,13 @@ func (c *Client) GetEnabledServices(ctx context.Context, project string) ([]stri
 		return nil, err
 	}
 
-	//the Api require the type of parent for which the services are fetched. Here the parent is projects/
-	parent := "projects/"
-	req := svc.Services.List(parent + project).Filter("state:ENABLED")
+	// List accepts a parent, which includes the type of resource with the id.
+	parent := fmt.Sprintf("projects/%s", project)
+	req := svc.Services.List(parent).Filter("state:ENABLED")
 	var services []string
 	if err := req.Pages(ctx, func(page *serviceusage.ListServicesResponse) error {
 		for _, service := range page.Services {
+			//services are listed in the form of project/services/serviceName
 			index := strings.LastIndex(service.Name, "/")
 			services = append(services, service.Name[index+1:])
 		}

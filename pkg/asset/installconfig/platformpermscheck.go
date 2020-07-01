@@ -3,9 +3,10 @@ package installconfig
 import (
 	"context"
 	"fmt"
-	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 
 	"github.com/pkg/errors"
+
+	gcpconfig "github.com/openshift/installer/pkg/asset/installconfig/gcp"
 
 	"github.com/openshift/installer/pkg/asset"
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
