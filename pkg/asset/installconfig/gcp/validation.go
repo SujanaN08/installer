@@ -10,6 +10,7 @@ import (
 
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/openshift/installer/pkg/types"
@@ -56,7 +57,6 @@ func ValidatePreExitingPublicDNS(client API, ic *types.InstallConfig) error {
 			return field.Invalid(field.NewPath("metadata", "name"), ic.ObjectMeta.Name, fmt.Sprintf("record %s already exists in DNS Zone (%s/%s) and might be in use by another cluster, please remove it to continue", record, ic.Platform.GCP.ProjectID, zone.Name))
 		}
 	}
-
 	return nil
 }
 
@@ -132,4 +132,34 @@ func validateMachineNetworksContainIP(fldPath *field.Path, networks []types.Mach
 		}
 	}
 	return field.ErrorList{field.Invalid(fldPath, subnetName, fmt.Sprintf("subnet CIDR range start %s is outside of the specified machine networks", ip))}
+}
+
+//ValidateEnabledServices gets all the enabled services for a project and validate if any of the required services are not enabled.
+func ValidateEnabledServices(ctx context.Context, client API, project string) error {
+	services := sets.NewString("compute.googleapis.com",
+		"cloudapis.googleapis.com",
+		"cloudresourcemanager.googleapis.com",
+		"dns.googleapis.com",
+		"iam.googleapis.com",
+		"iamcredentials.googleapis.com",
+		"servicemanagement.googleapis.com",
+		"serviceusage.googleapis.com",
+		"storage-api.googleapis.com",
+		"storage-component.googleapis.com")
+	projectServices, err := client.GetEnabledServices(ctx, project)
+
+	if err != nil {
+		if ae, ok := err.(*googleapi.Error); ok {
+			if ae.Code == http.StatusForbidden {
+				return nil
+			}
+		}
+		return err
+	}
+
+	if remaining := services.Difference(sets.NewString(projectServices...)); remaining.Len() > 0 {
+		return fmt.Errorf("following required services are not enabled in this project: %s",
+			strings.Join(remaining.List(), ","))
+	}
+	return nil
 }
