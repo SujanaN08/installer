@@ -4,7 +4,7 @@ Beyond the [platform-agnostic `install-config.yaml` properties](../customization
 
 ## Cluster-scoped properties
 
-* `vCenter` (required string): The domain name or IP address of the vCenter.
+* `vCenter` (required string): The domain name or IP address of the vCenter. It can contain the port number for vCenter. It should be of the form hostname:port and should be specified without url protocol scheme.
 * `username` (required string): The username to use to connect to the vCenter.
 * `password` (required string): The password to use to connect to the vCenter.
 * `datacenter` (required string): The name of the datacenter to use in the vCenter.
